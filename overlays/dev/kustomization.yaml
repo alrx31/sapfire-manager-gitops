@@ -10,6 +10,22 @@ patches:
   - path: patch-server-config.yaml
   - path: patch-keycloak-config.yaml
   - path: patch-ingress.yaml
+  # Kubernetes defaults imagePullPolicy to Always for a `:latest` tag, which makes every
+  # rollout depend on a registry that may not hold these images at all (locally they are
+  # only in the workstation's docker store). IfNotPresent is also the right policy once
+  # Jenkins pins immutable `<sha>` tags here — an immutable tag never needs re-pulling.
+  - target:
+      kind: Deployment
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/imagePullPolicy
+        value: IfNotPresent
+  - target:
+      kind: Job
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/imagePullPolicy
+        value: IfNotPresent
 images:
   - name: sapfire/client
     newTag: latest
