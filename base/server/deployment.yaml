@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: server
+  labels:
+    app: server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: server
+  template:
+    metadata:
+      labels:
+        app: server
+    spec:
+      containers:
+        - name: server
+          image: sapfire/server:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              valueFrom:
+                configMapKeyRef: { name: server-config, key: ASPNETCORE_ENVIRONMENT }
+            - name: APP_DB_HOST
+              valueFrom:
+                configMapKeyRef: { name: server-config, key: APP_DB_HOST }
+            - name: APP_DB_PORT
+              valueFrom:
+                configMapKeyRef: { name: server-config, key: APP_DB_PORT }
+            - name: APP_DB_NAME
+              valueFrom:
+                configMapKeyRef: { name: server-config, key: APP_DB_NAME }
+            - name: APP_DB_USER
+              valueFrom:
+                configMapKeyRef: { name: server-config, key: APP_DB_USER }
+            - name: APP_DB_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: sapfire-db-credentials, key: APP_DB_PASSWORD }
+            # Composed from the vars above via k8s' $(VAR) dependent-env-var
+            # expansion (same shape docker-compose.yml interpolates), so only
+            # the password itself needs to be a Secret key.
+            - name: ConnectionStrings__Default
+              value: "Host=$(APP_DB_HOST);Port=$(APP_DB_PORT);Database=$(APP_DB_NAME);Username=$(APP_DB_USER);Password=$(APP_DB_PASSWORD)"
+            - name: Keycloak__Authority
+              valueFrom:
+                configMapKeyRef: { name: server-config, key: Keycloak__Authority }
+            - name: Keycloak__InternalUrl
+              valueFrom:
+                configMapKeyRef: { name: server-config, key: Keycloak__InternalUrl }
+            - name: Keycloak__Audience
+              valueFrom:
+                configMapKeyRef: { name: server-config, key: Keycloak__Audience }
+            - name: Keycloak__Admin__ClientId
+              valueFrom:
+                configMapKeyRef: { name: server-config, key: Keycloak__Admin__ClientId }
+            - name: Keycloak__Admin__ClientSecret
+              valueFrom:
+                secretKeyRef: { name: keycloak-client-secret, key: KEYCLOAK_ADMIN_CLIENT_SECRET }
+          readinessProbe:
+            httpGet: { path: /health/ready, port: 8080 }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /health/live, port: 8080 }
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits: { cpu: 500m, memory: 512Mi }

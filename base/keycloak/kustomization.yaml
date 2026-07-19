@@ -1,0 +1,17 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - deployment.yaml
+  - service.yaml
+  - configmap.yaml
+  - realm-sync-job.yaml
+
+# realm-export.json here is a vendored copy of ../../../../src/keycloak/realm-export.json,
+# the single source of truth (see src/keycloak/KEYCLOAK.md). `kubectl kustomize`/
+# `kubectl apply -k` refuse to read generator files from outside their own root
+# (RestrictionRootOnly, no flag to relax it), so a copy is unavoidable — run
+# ../../sync-realm-export.sh after editing the source, and check-docs flags drift.
+configMapGenerator:
+  - name: keycloak-realm-export
+    files:
+      - realm-export.json

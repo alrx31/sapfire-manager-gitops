@@ -1,0 +1,49 @@
+# The app's own Postgres — kept as a separate instance from keycloak-db, same
+# as compose (see deploy/DEPLOY.md). In-cluster StatefulSet for the diploma;
+# see k8s/README.md for the managed-Postgres trade-off.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: sapfire-db
+spec:
+  serviceName: sapfire-db
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sapfire-db
+  template:
+    metadata:
+      labels:
+        app: sapfire-db
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              valueFrom: { configMapKeyRef: { name: sapfire-db-config, key: POSTGRES_DB } }
+            - name: POSTGRES_USER
+              valueFrom: { configMapKeyRef: { name: sapfire-db-config, key: POSTGRES_USER } }
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: sapfire-db-credentials, key: APP_DB_PASSWORD }
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"]
+            periodSeconds: 10
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits: { cpu: 500m, memory: 512Mi }
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 2Gi

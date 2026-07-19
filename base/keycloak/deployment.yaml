@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak
+  labels:
+    app: keycloak
+spec:
+  # Single replica: sessions are not shared across instances without a distributed
+  # cache/DB-backed session store, and this is a single-node cluster anyway (see
+  # k8s/README.md "Open questions carried over").
+  replicas: 1
+  selector:
+    matchLabels:
+      app: keycloak
+  template:
+    metadata:
+      labels:
+        app: keycloak
+    spec:
+      containers:
+        - name: keycloak
+          # Built from ../../../../src/keycloak/Dockerfile: upstream Keycloak plus the
+          # sapfire login theme baked in (no bind-mount available in k8s).
+          image: sapfire/keycloak:latest
+          args: ["start"]
+          ports:
+            - containerPort: 8080
+          env:
+            - name: KC_DB
+              valueFrom: { configMapKeyRef: { name: keycloak-config, key: KC_DB } }
+            - name: KC_DB_URL
+              valueFrom: { configMapKeyRef: { name: keycloak-config, key: KC_DB_URL } }
+            - name: KC_DB_USERNAME
+              valueFrom: { configMapKeyRef: { name: keycloak-config, key: KC_DB_USERNAME } }
+            - name: KC_DB_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: keycloak-db-credentials, key: KEYCLOAK_DB_PASSWORD }
+            - name: KC_HOSTNAME
+              valueFrom: { configMapKeyRef: { name: keycloak-config, key: KC_HOSTNAME } }
+            - name: KC_HOSTNAME_BACKCHANNEL_DYNAMIC
+              valueFrom: { configMapKeyRef: { name: keycloak-config, key: KC_HOSTNAME_BACKCHANNEL_DYNAMIC } }
+            - name: KC_HTTP_ENABLED
+              valueFrom: { configMapKeyRef: { name: keycloak-config, key: KC_HTTP_ENABLED } }
+            - name: KC_PROXY_HEADERS
+              valueFrom: { configMapKeyRef: { name: keycloak-config, key: KC_PROXY_HEADERS } }
+            - name: KC_HEALTH_ENABLED
+              valueFrom: { configMapKeyRef: { name: keycloak-config, key: KC_HEALTH_ENABLED } }
+            - name: KC_METRICS_ENABLED
+              valueFrom: { configMapKeyRef: { name: keycloak-config, key: KC_METRICS_ENABLED } }
+            - name: KC_BOOTSTRAP_ADMIN_USERNAME
+              valueFrom: { configMapKeyRef: { name: keycloak-config, key: KC_BOOTSTRAP_ADMIN_USERNAME } }
+            - name: KC_BOOTSTRAP_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: keycloak-admin-credentials, key: KEYCLOAK_ADMIN_PASSWORD }
+          # TCP-only: KC_HEALTH_ENABLED serves /health/* on a separate management
+          # port whose default has moved between Keycloak versions, so an httpGet
+          # probe risks silently pointing at the wrong port. Tighten to httpGet
+          # once the exact port is verified against the deployed version.
+          readinessProbe:
+            tcpSocket: { port: 8080 }
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket: { port: 8080 }
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          resources:
+            requests: { cpu: 250m, memory: 512Mi }
+            limits: { cpu: 1, memory: 1Gi }

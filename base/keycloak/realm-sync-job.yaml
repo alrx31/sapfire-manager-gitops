@@ -1,0 +1,48 @@
+# Declarative, idempotent realm sync — the preferred option in
+# ../../../../tasks/us/k8s-migration.md over `--import-realm` (which only ever
+# imports once per DB) and over kcadm.sh scripting. Under plain `kubectl apply -k`
+# the annotations are inert — delete the previous Job before re-applying
+# (`kubectl delete job keycloak-realm-sync`).
+#
+# PostSync, not PreSync as ../../../../tasks/us/argocd-gitops.md tentatively suggested:
+# keycloak-config-cli drives Keycloak's Admin REST API, so it needs a *running* Keycloak.
+# In the PreSync phase of a first sync the Deployment does not exist yet, so the job would
+# burn its availability check and fail the sync every time. PostSync also matches what the
+# job actually guards — realm config is not a schema migration the app cannot boot without.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: keycloak-realm-sync
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  backoffLimit: 3
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: keycloak-config-cli
+          image: adorsys/keycloak-config-cli:6.5.1-26.0.5
+          env:
+            - name: KEYCLOAK_URL
+              value: http://keycloak:8080
+            - name: KEYCLOAK_AVAILABILITYCHECK_ENABLED
+              value: "true"
+            - name: KEYCLOAK_AVAILABILITYCHECK_TIMEOUT
+              value: 120s
+            - name: KEYCLOAK_USER
+              valueFrom: { configMapKeyRef: { name: keycloak-config, key: KC_BOOTSTRAP_ADMIN_USERNAME } }
+            - name: KEYCLOAK_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: keycloak-admin-credentials, key: KEYCLOAK_ADMIN_PASSWORD }
+            - name: IMPORT_FILES_LOCATIONS
+              value: /config/realm-export.json
+          volumeMounts:
+            - name: realm-config
+              mountPath: /config
+              readOnly: true
+      volumes:
+        - name: realm-config
+          configMap:
+            name: keycloak-realm-export

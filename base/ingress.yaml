@@ -1,0 +1,39 @@
+# Two hosts, matching the topology diagram in deploy/DEPLOY.md: app.<domain>
+# (client, whose own nginx still proxies /api/* to the server Service) and
+# auth.<domain> (Keycloak). Both replace the compose keycloak-tls front end —
+# TLS terminates here, not in-pod. Placeholder hostnames and staging issuer;
+# overlays patch both per environment (see k8s/README.md "Domain").
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: sapfire
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-staging
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts: ["app.sapfire.test"]
+      secretName: sapfire-app-tls
+    - hosts: ["auth.sapfire.test"]
+      secretName: sapfire-auth-tls
+  rules:
+    - host: app.sapfire.test
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: client
+                port:
+                  number: 80
+    - host: auth.sapfire.test
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: keycloak
+                port:
+                  number: 8080

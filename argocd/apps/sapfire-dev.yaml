@@ -1,0 +1,35 @@
+# Dev: fully automated. A merge to main reaches this environment with no human step —
+# Jenkins bumps the image tag in overlays/dev (see deploy/ci/Jenkinsfile "Update GitOps
+# repo"), Argo CD notices the drift and reconciles.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: sapfire-dev
+  namespace: argocd
+  finalizers:
+    # Deleting the Application cascades to the workloads it created; without this the
+    # resources are orphaned in the cluster and the next sync fights them.
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/alrx31/sapfire-manager-gitops.git
+    targetRevision: main
+    path: overlays/dev
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: sapfire-dev
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      # The overlay owns its namespace.yaml, but that object is created in the same sync
+      # that needs it to exist; CreateNamespace covers the ordering on a clean cluster.
+      - CreateNamespace=true
+    retry:
+      limit: 3
+      backoff:
+        duration: 20s
+        factor: 2
+        maxDuration: 5m

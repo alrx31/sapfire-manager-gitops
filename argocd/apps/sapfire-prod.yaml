@@ -1,0 +1,29 @@
+# Prod: no `automated` block. That absence *is* the approval gate — promotion is a commit
+# bumping the image tag in overlays/prod followed by an explicit `argocd app sync
+# sapfire-prod` (or the Sync button). Argo CD will report OutOfSync in between, which is
+# the intended visible "release pending" state, not a fault.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: sapfire-prod
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/alrx31/sapfire-manager-gitops.git
+    targetRevision: main
+    path: overlays/prod
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: sapfire-prod
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: 3
+      backoff:
+        duration: 20s
+        factor: 2
+        maxDuration: 5m

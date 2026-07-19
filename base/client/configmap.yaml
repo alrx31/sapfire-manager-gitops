@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: client-config
+data:
+  # Placeholder hostnames — see k8s/README.md "Domain". Overlays patch these.
+  KEYCLOAK_URL: https://auth.sapfire.test
+  KEYCLOAK_REALM: sapfire
+  KEYCLOAK_CLIENT_ID: sapfire-spa
+  # Empty: the SPA calls /api/* on its own origin and the client's own nginx
+  # (nginx.http.conf, unchanged from compose) proxies it to the server Service.
+  API_BASE_URL: ""

@@ -1,0 +1,25 @@
+# App-of-apps root: the only object applied by hand. It syncs argocd/apps/ from the config
+# repo, which contains the two environment Applications — so Argo CD's own configuration is
+# itself declarative and version-controlled, and adding an environment is a commit rather
+# than a kubectl invocation.
+#
+# This file is deliberately NOT in apps/kustomization.yaml: an app-of-apps that manages
+# itself is a self-reference that makes deletion and drift semantics confusing for no gain.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: sapfire-root
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/alrx31/sapfire-manager-gitops.git
+    targetRevision: main
+    path: argocd/apps
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

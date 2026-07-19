@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: server-config
+data:
+  ASPNETCORE_ENVIRONMENT: Production
+  APP_DB_HOST: sapfire-db
+  APP_DB_PORT: "5432"
+  APP_DB_NAME: sapfire
+  APP_DB_USER: sapfire
+  # Public issuer — must equal the "iss" claim in browser-issued tokens, see
+  # ../../../DEPLOY.md ("Keycloak hostname / issuer"). Placeholder host,
+  # patched per overlay.
+  Keycloak__Authority: https://auth.sapfire.test/realms/sapfire
+  # In-cluster Service DNS name, not routable from outside — used for discovery
+  # and the Admin REST API, since the public hostname is not resolvable inside
+  # the cluster network.
+  Keycloak__InternalUrl: http://keycloak:8080
+  Keycloak__Audience: sapfire-api
+  Keycloak__Admin__ClientId: sapfire-api

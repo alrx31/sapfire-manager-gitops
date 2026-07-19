@@ -1,0 +1,65 @@
+# EF Core migrations, run before the server Deployment rolls (see
+# ../../../../tasks/us/k8s-migration.md and Sapfire.Api/Program.cs's
+# `--migrate` mode). Under Argo CD this is a PreSync hook: it runs to completion
+# before any new server Pod starts, and a non-zero exit fails the sync so a broken
+# migration never reaches a rollout. Under plain `kubectl apply -k` the annotations
+# are inert and this is an ordinary Job — delete the previous one before re-applying,
+# Job specs are immutable (`kubectl delete job server-migrate`).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: server-migrate
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    # Reruns are clean: the previous Job object is removed just before this one is
+    # created, which also sidesteps the immutable-spec problem above.
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: Never
+      initContainers:
+        # PreSync runs before the Sync phase, so on a steady-state sync postgres-app is
+        # already up but may still be mid-restart. Waiting here turns that race into a
+        # delay instead of a failed sync. It does NOT help on the very first sync, when
+        # the StatefulSet does not exist yet — see "First sync" in deploy/argocd/README.md.
+        - name: wait-for-db
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              until nc -z "$APP_DB_HOST" "$APP_DB_PORT"; do
+                echo "waiting for $APP_DB_HOST:$APP_DB_PORT"
+                sleep 3
+              done
+          env:
+            - name: APP_DB_HOST
+              valueFrom:
+                configMapKeyRef: { name: server-config, key: APP_DB_HOST }
+            - name: APP_DB_PORT
+              valueFrom:
+                configMapKeyRef: { name: server-config, key: APP_DB_PORT }
+      containers:
+        - name: migrate
+          image: sapfire/server:latest
+          args: ["--migrate"]
+          env:
+            - name: APP_DB_HOST
+              valueFrom:
+                configMapKeyRef: { name: server-config, key: APP_DB_HOST }
+            - name: APP_DB_PORT
+              valueFrom:
+                configMapKeyRef: { name: server-config, key: APP_DB_PORT }
+            - name: APP_DB_NAME
+              valueFrom:
+                configMapKeyRef: { name: server-config, key: APP_DB_NAME }
+            - name: APP_DB_USER
+              valueFrom:
+                configMapKeyRef: { name: server-config, key: APP_DB_USER }
+            - name: APP_DB_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: sapfire-db-credentials, key: APP_DB_PASSWORD }
+            - name: ConnectionStrings__Default
+              value: "Host=$(APP_DB_HOST);Port=$(APP_DB_PORT);Database=$(APP_DB_NAME);Username=$(APP_DB_USER);Password=$(APP_DB_PASSWORD)"

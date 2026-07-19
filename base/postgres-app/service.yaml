@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: sapfire-db
+spec:
+  clusterIP: None
+  selector:
+    app: sapfire-db
+  ports:
+    - port: 5432
+      targetPort: 5432

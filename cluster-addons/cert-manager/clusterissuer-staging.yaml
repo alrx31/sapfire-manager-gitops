@@ -1,0 +1,18 @@
+# Use this issuer first — the production issuer's rate limits are easy to
+# burn through while iterating (see ../../README.md "TLS / Ingress").
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-staging
+spec:
+  acme:
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    # Placeholder — replace with a real, monitored mailbox before relying on
+    # expiry notifications.
+    email: admin@sapfire.test
+    privateKeySecretRef:
+      name: letsencrypt-staging-account-key
+    solvers:
+      - http01:
+          ingress:
+            ingressClassName: nginx
