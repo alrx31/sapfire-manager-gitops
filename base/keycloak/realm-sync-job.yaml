@@ -38,6 +38,14 @@ spec:
                 secretKeyRef: { name: keycloak-admin-credentials, key: KEYCLOAK_ADMIN_PASSWORD }
             - name: IMPORT_FILES_LOCATIONS
               value: /config/realm-export.json
+            # realm-export.json is committed to git, so the sapfire-api client secret cannot be
+            # a literal there. keycloak-config-cli substitutes $(env:...) before the JSON is
+            # parsed, letting the sealed value reach Keycloak without ever landing in the repo.
+            - name: IMPORT_VAR_SUBSTITUTION_ENABLED
+              value: "true"
+            - name: KEYCLOAK_ADMIN_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef: { name: keycloak-client-secret, key: KEYCLOAK_ADMIN_CLIENT_SECRET }
           volumeMounts:
             - name: realm-config
               mountPath: /config

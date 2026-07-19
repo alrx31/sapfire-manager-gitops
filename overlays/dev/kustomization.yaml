@@ -4,7 +4,7 @@ namespace: sapfire-dev
 resources:
   - ../../base
   - namespace.yaml
-  # - sealed-secrets   # uncomment once populated, see sealed-secrets/README.md
+  - sealed-secrets
 patches:
   - path: patch-client-config.yaml
   - path: patch-server-config.yaml
