@@ -41,9 +41,24 @@ git revert <commit> && git push       # dev self-heals; prod needs an explicit s
 
 ## Seal a secret
 
+Requires the Sealed Secrets controller, applied by hand once per cluster (no
+Application syncs `cluster-addons/`):
+
+```bash
+kubectl apply -k cluster-addons/sealed-secrets
+kubectl -n kube-system rollout status deploy/sealed-secrets-controller
+```
+
 ```bash
 ./seal-secret.sh sapfire-dev sapfire-db-credentials APP_DB_PASSWORD='...' \
     > overlays/dev/sealed-secrets/sapfire-db-credentials.yaml
+```
+
+Re-sealing `keycloak-client-secret` also requires deleting the realm-sync Job so
+it re-runs — Keycloak otherwise keeps serving the previous value:
+
+```bash
+kubectl delete job keycloak-realm-sync -n sapfire-dev --ignore-not-found
 ```
 
 Four secrets per environment, sealed independently for dev and prod. Plaintext never
