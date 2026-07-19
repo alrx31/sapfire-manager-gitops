@@ -1,0 +1,28 @@
+# Local-cluster variant. Apply this instead of ../base on a kind/Docker Desktop cluster.
+#
+# Without a working LoadBalancer the controller never learns an address to write
+# into Ingress .status, so every Ingress stays addressless and Argo CD reports the
+# Application as Progressing forever. On a local cluster the ingress really is
+# reachable at 127.0.0.1 — via deploy/k8s/local-ingress-proxy.sh in the app repo —
+# so publishing that address is accurate here, and wrong anywhere with a real LB.
+# That is why it lives in this overlay rather than in the base.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../base
+patches:
+  - target:
+      kind: Deployment
+      name: ingress-nginx-controller
+      namespace: ingress-nginx
+    # replace, not add: --publish-service and --publish-status-address are mutually
+    # exclusive and the controller exits on startup if both are given. Index 1 is
+    # --publish-service in the upstream v1.12.0 manifest; the `test` op fails the
+    # build rather than silently patching the wrong flag if that ever shifts.
+    patch: |-
+      - op: test
+        path: /spec/template/spec/containers/0/args/1
+        value: --publish-service=$(POD_NAMESPACE)/ingress-nginx-controller
+      - op: replace
+        path: /spec/template/spec/containers/0/args/1
+        value: --publish-status-address=127.0.0.1
