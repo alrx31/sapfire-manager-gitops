@@ -1,7 +1,9 @@
 # Sealed Secrets — sapfire-dev
 
-All four `SealedSecret` manifests are populated and wired into
-`../kustomization.yaml`'s `resources:` list.
+All five `SealedSecret` manifests are populated and wired into
+`kustomization.yaml`. They were sealed on 25.09.2026 against the local Docker Desktop cluster's
+controller; a new cluster has a new controller key, so every file here has to be resealed
+with fresh values (`../../../seal-secret.sh sapfire-dev <name> KEY=...`).
 
 Secrets (name → key):
 
@@ -9,6 +11,10 @@ Secrets (name → key):
 - `keycloak-db-credentials` → `KEYCLOAK_DB_PASSWORD`
 - `keycloak-admin-credentials` → `KEYCLOAK_ADMIN_PASSWORD`
 - `keycloak-client-secret` → `KEYCLOAK_ADMIN_CLIENT_SECRET`
+- `rabbitmq-credentials` → `RABBITMQ_PASSWORD`
+
+Plaintext values are nowhere but in the cluster:
+`kubectl -n sapfire-dev get secret <name> -o jsonpath='{.data.<KEY>}' | base64 -d`.
 
 `keycloak-client-secret` is also consumed by the realm-sync Job, not just the
 server: `realm-export.json` is committed to git, so the `sapfire-api` client

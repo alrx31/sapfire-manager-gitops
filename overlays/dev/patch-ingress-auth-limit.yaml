@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: sapfire-auth-limit
+spec:
+  rules:
+    - host: auth.dev.sapfire.test
+      http:
+        paths:
+          - path: /realms/sapfire/protocol/openid-connect/token
+            pathType: Exact
+            backend:
+              service:
+                name: keycloak
+                port:
+                  number: 8080
+          - path: /realms/sapfire/login-actions/authenticate
+            pathType: Exact
+            backend:
+              service:
+                name: keycloak
+                port:
+                  number: 8080
+  tls:
+    - hosts: ["auth.dev.sapfire.test"]
+      secretName: sapfire-auth-tls

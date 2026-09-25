@@ -1,0 +1,13 @@
+# ClusterIP only, never behind the ingress: the Worker's HTTP port serves health checks
+# and, later, internal endpoints the API calls (AD-05).
+apiVersion: v1
+kind: Service
+metadata:
+  name: worker
+spec:
+  selector:
+    app: worker
+  ports:
+    - name: internal
+      port: 8080
+      targetPort: internal

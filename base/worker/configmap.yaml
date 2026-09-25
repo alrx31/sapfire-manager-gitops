@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: worker-config
+data:
+  ASPNETCORE_ENVIRONMENT: Production
+  Worker__SchedulerEnabled: "true"
+  Worker__TickInterval: "00:00:15"
+  Worker__TimeZone: UTC
+  # Five-field cron in Worker__TimeZone; empty means the job runs only on demand.
+  Worker__Jobs__noop__Schedule: "0 * * * *"
+  Outbox__PollInterval: "00:00:05"
+  Outbox__BatchSize: "100"
+  RabbitMq__Consumer__MaxAttempts: "5"
+  RabbitMq__Consumer__RetryDelay: "00:00:02"

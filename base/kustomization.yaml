@@ -3,7 +3,11 @@ kind: Kustomization
 resources:
   - client
   - server
+  - worker
   - keycloak
   - postgres-app
   - postgres-kc
+  - rabbitmq
+  - backup
   - ingress.yaml
+  - ingress-auth-limit.yaml

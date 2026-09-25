@@ -18,3 +18,13 @@ data:
   Keycloak__InternalUrl: http://keycloak:8080
   Keycloak__Audience: sapfire-api
   Keycloak__Admin__ClientId: sapfire-api
+  # Rate limiting (AD-19): per user (token "sub") / per client IP for anonymous calls.
+  RateLimiting__Enabled: "true"
+  RateLimiting__User__PermitLimit: "300"
+  RateLimiting__User__Window: "00:01:00"
+  RateLimiting__Anonymous__PermitLimit: "60"
+  RateLimiting__Anonymous__Window: "00:01:00"
+  # X-Forwarded-For is trusted only from pods (k3s default cluster CIDR) and only two hops
+  # deep: ingress-nginx -> client nginx -> server. See ../../../DEPLOY.md "Rate limiting".
+  ForwardedHeaders__KnownNetworks__0: 10.42.0.0/16
+  ForwardedHeaders__ForwardLimit: "2"

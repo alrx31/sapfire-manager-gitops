@@ -1,0 +1,12 @@
+# ClusterIP only: the broker is internal (13.1.4), only the Worker connects.
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq
+spec:
+  selector:
+    app: rabbitmq
+  ports:
+    - name: amqp
+      port: 5672
+      targetPort: amqp

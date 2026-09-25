@@ -38,6 +38,15 @@ spec:
                 secretKeyRef: { name: keycloak-admin-credentials, key: KEYCLOAK_ADMIN_PASSWORD }
             - name: IMPORT_FILES_LOCATIONS
               value: /config/realm-export.json
+            # Groups and clients absent from the files stay: org groups made by create-org.sh,
+            # SSO clients registered in the console, and in dev the base and demo files that
+            # each describe only part of the realm. Users have no managed switch in
+            # keycloak-config-cli and are never deleted; a password tagged userLabel "initial"
+            # is set only when the user is created.
+            - name: IMPORT_MANAGED_GROUP
+              value: no-delete
+            - name: IMPORT_MANAGED_CLIENT
+              value: no-delete
             # realm-export.json is committed to git, so the sapfire-api client secret cannot be
             # a literal there. keycloak-config-cli substitutes $(env:...) before the JSON is
             # parsed, letting the sealed value reach Keycloak without ever landing in the repo.

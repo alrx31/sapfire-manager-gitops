@@ -10,6 +10,8 @@ patches:
   - path: patch-server-config.yaml
   - path: patch-keycloak-config.yaml
   - path: patch-ingress.yaml
+  - path: patch-ingress-auth-limit.yaml
+  - path: patch-realm-demo.yaml
   # Kubernetes defaults imagePullPolicy to Always for a `:latest` tag, which makes every
   # rollout depend on a registry that may not hold these images at all (locally they are
   # only in the workstation's docker store). IfNotPresent is also the right policy once
@@ -26,10 +28,20 @@ patches:
       - op: add
         path: /spec/template/spec/containers/0/imagePullPolicy
         value: IfNotPresent
+# keycloak/realm-demo.json is a vendored copy of ../../../keycloak/realm-demo.json, refreshed by
+# ../../sync-realm-export.sh for the same reason as the base realm export. Prod has no such
+# file and imports the base realm only.
+configMapGenerator:
+  - name: keycloak-realm-export
+    behavior: merge
+    files:
+      - realm-demo.json=keycloak/realm-demo.json
 images:
   - name: sapfire/client
     newTag: latest
   - name: sapfire/server
+    newTag: latest
+  - name: sapfire/worker
     newTag: latest
   - name: sapfire/keycloak
     newTag: latest

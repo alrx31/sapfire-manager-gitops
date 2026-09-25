@@ -1,0 +1,38 @@
+# Rate limit on Keycloak's sign-in entry points (AD-19, ТЗ 10.1.9): the token endpoint
+# and the login form POST. ingress-nginx annotations apply to a whole Ingress object, so
+# these two paths live in their own Ingress on the same host; ingress-nginx merges it into
+# the auth.<domain> server block, and the Exact paths win over the "/" Prefix of the main
+# Ingress. The limits are per client IP and complement Keycloak's brute-force detection.
+# No cert-manager annotation here: the certificate is owned by the main Ingress, this one
+# only references the same secret. Overlays patch the host like the main Ingress.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: sapfire-auth-limit
+  annotations:
+    nginx.ingress.kubernetes.io/limit-rps: "2"
+    nginx.ingress.kubernetes.io/limit-burst-multiplier: "5"
+    nginx.ingress.kubernetes.io/limit-connections: "10"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts: ["auth.sapfire.test"]
+      secretName: sapfire-auth-tls
+  rules:
+    - host: auth.sapfire.test
+      http:
+        paths:
+          - path: /realms/sapfire/protocol/openid-connect/token
+            pathType: Exact
+            backend:
+              service:
+                name: keycloak
+                port:
+                  number: 8080
+          - path: /realms/sapfire/login-actions/authenticate
+            pathType: Exact
+            backend:
+              service:
+                name: keycloak
+                port:
+                  number: 8080

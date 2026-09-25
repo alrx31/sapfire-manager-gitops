@@ -9,10 +9,20 @@ patches:
   - path: patch-issuer.yaml
   - path: patch-scale.yaml
   - path: patch-storage.yaml
+# Prod pins an immutable tag, never `latest`. Jenkins writes only overlays/dev; promotion to
+# prod is a human commit of a tag that already ran in dev (../../../argocd/README.md
+# "Promotion"). "0000000" is a placeholder: no such image exists, so prod does not start
+# until the first promotion commit.
 images:
   - name: sapfire/client
-    newTag: latest
+    newName: ghcr.io/sapfire-manager/sapfire-client
+    newTag: "0000000"
   - name: sapfire/server
-    newTag: latest
+    newName: ghcr.io/sapfire-manager/sapfire-server
+    newTag: "0000000"
+  - name: sapfire/worker
+    newName: ghcr.io/sapfire-manager/sapfire-worker
+    newTag: "0000000"
   - name: sapfire/keycloak
-    newTag: latest
+    newName: ghcr.io/sapfire-manager/sapfire-keycloak
+    newTag: "0000000"

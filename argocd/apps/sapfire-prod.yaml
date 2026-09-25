@@ -1,7 +1,8 @@
-# Prod: no `automated` block. That absence *is* the approval gate — promotion is a commit
-# bumping the image tag in overlays/prod followed by an explicit `argocd app sync
-# sapfire-prod` (or the Sync button). Argo CD will report OutOfSync in between, which is
-# the intended visible "release pending" state, not a fault.
+# Prod: automated, but only inside the nightly sync window of project `sapfire`
+# (project.yaml). Promotion is a commit pinning the image tag in overlays/prod; Argo CD shows
+# OutOfSync until the window opens and then rolls it out with downtime (TZ 13.3.2).
+# `prune: false`: a resource removed from git is not deleted from prod unattended at night,
+# the backup PVC included. Prune by hand with `argocd app sync sapfire-prod --prune`.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -10,7 +11,7 @@ metadata:
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
-  project: default
+  project: sapfire
   source:
     repoURL: https://github.com/alrx31/sapfire-manager-gitops.git
     targetRevision: main
@@ -19,6 +20,9 @@ spec:
     server: https://kubernetes.default.svc
     namespace: sapfire-prod
   syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true
     syncOptions:
       - CreateNamespace=true
     retry:

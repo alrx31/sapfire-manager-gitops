@@ -1,0 +1,66 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: keycloak-db-backup
+  labels:
+    app: db-backup
+    backup-target: keycloak
+spec:
+  schedule: "0 */2 * * *"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 600
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 3600
+      template:
+        metadata:
+          labels:
+            app: db-backup
+            backup-target: keycloak
+        spec:
+          restartPolicy: OnFailure
+          securityContext:
+            runAsUser: 999
+            runAsGroup: 999
+            fsGroup: 999
+          containers:
+            - name: pg-dump
+              image: postgres:16
+              command: ["sh", "/scripts/backup.sh"]
+              env:
+                - name: BACKUP_NAME
+                  value: keycloak
+                - name: BACKUP_ROOT
+                  value: /backups
+                - name: BACKUP_RETENTION_DAYS
+                  valueFrom: { configMapKeyRef: { name: backup-config, key: BACKUP_RETENTION_DAYS } }
+                - name: PGHOST
+                  value: keycloak-db
+                - name: PGPORT
+                  value: "5432"
+                - name: PGDATABASE
+                  valueFrom: { configMapKeyRef: { name: keycloak-db-config, key: POSTGRES_DB } }
+                - name: PGUSER
+                  valueFrom: { configMapKeyRef: { name: keycloak-db-config, key: POSTGRES_USER } }
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef: { name: keycloak-db-credentials, key: KEYCLOAK_DB_PASSWORD }
+              volumeMounts:
+                - name: backups
+                  mountPath: /backups
+                - name: scripts
+                  mountPath: /scripts
+                  readOnly: true
+              resources:
+                requests: { cpu: 50m, memory: 64Mi }
+                limits: { cpu: 500m, memory: 256Mi }
+          volumes:
+            - name: backups
+              persistentVolumeClaim:
+                claimName: db-backups
+            - name: scripts
+              configMap:
+                name: backup-script

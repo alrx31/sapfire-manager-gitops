@@ -1,0 +1,141 @@
+{
+  "realm": "sapfire",
+  "groups": [
+    {
+      "name": "orgs",
+      "subGroups": [
+        {
+          "name": "acme",
+          "attributes": { "org-slug": ["acme"] },
+          "subGroups": [
+            {
+              "name": "roles",
+              "subGroups": [
+                { "name": "admin",    "realmRoles": ["sapfire-admin"] },
+                { "name": "employee", "realmRoles": ["sapfire-employee"] }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "beta",
+          "attributes": { "org-slug": ["beta"] },
+          "subGroups": [
+            {
+              "name": "roles",
+              "subGroups": [
+                { "name": "admin",    "realmRoles": ["sapfire-admin"] },
+                { "name": "employee", "realmRoles": ["sapfire-employee"] }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "sapfire-seed",
+      "name": "Sapfire seed / demo client (direct grant)",
+      "description": "Public client with Direct Access Grants enabled, used by deploy/seed.sh and manual testing to obtain real user tokens (username+password) for the demo accounts. The SPA client keeps direct grants disabled; this one exists only to script/seed demo data.",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "implicitFlowEnabled": false,
+      "serviceAccountsEnabled": false,
+      "protocolMappers": [
+        {
+          "name": "groups",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-group-membership-mapper",
+          "consentRequired": false,
+          "config": {
+            "full.path": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "claim.name": "groups"
+          }
+        },
+        {
+          "name": "realm-roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "multivalued": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "claim.name": "roles"
+          }
+        },
+        {
+          "name": "audience-sapfire-api",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "sapfire-api",
+            "id.token.claim": "false",
+            "access.token.claim": "true"
+          }
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "acme-admin",
+      "email": "admin@acme.test",
+      "firstName": "Ada",
+      "lastName": "Admin",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [ { "type": "password", "value": "Demo-Sapf1re!26", "temporary": false, "userLabel": "initial" } ],
+      "groups": [ "/orgs/acme/roles/admin" ]
+    },
+    {
+      "username": "acme-emp1",
+      "email": "emp1@acme.test",
+      "firstName": "Erin",
+      "lastName": "Employee",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [ { "type": "password", "value": "Demo-Sapf1re!26", "temporary": false, "userLabel": "initial" } ],
+      "groups": [ "/orgs/acme/roles/employee" ]
+    },
+    {
+      "username": "acme-emp2",
+      "email": "emp2@acme.test",
+      "firstName": "Evan",
+      "lastName": "Employee",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [ { "type": "password", "value": "Demo-Sapf1re!26", "temporary": false, "userLabel": "initial" } ],
+      "groups": [ "/orgs/acme/roles/employee" ]
+    },
+    {
+      "username": "acme-emp3",
+      "email": "emp3@acme.test",
+      "firstName": "Ola",
+      "lastName": "Operator",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [ { "type": "password", "value": "Demo-Sapf1re!26", "temporary": false, "userLabel": "initial" } ],
+      "groups": [ "/orgs/acme/roles/employee" ]
+    },
+    {
+      "username": "beta-admin",
+      "email": "admin@beta.test",
+      "firstName": "Boris",
+      "lastName": "Admin",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [ { "type": "password", "value": "Demo-Sapf1re!26", "temporary": false, "userLabel": "initial" } ],
+      "groups": [ "/orgs/beta/roles/admin" ]
+    }
+  ]
+}

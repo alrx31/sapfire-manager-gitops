@@ -11,7 +11,7 @@ metadata:
     # resources are orphaned in the cluster and the next sync fights them.
     - resources-finalizer.argocd.argoproj.io
 spec:
-  project: default
+  project: sapfire
   source:
     repoURL: https://github.com/alrx31/sapfire-manager-gitops.git
     targetRevision: main

@@ -1,0 +1,55 @@
+# Internal event transport (AD-03, 13.1.3). One node; the StatefulSet gives it the stable
+# hostname rabbitmq-0 that the node name and its data directory depend on.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: rabbitmq
+spec:
+  serviceName: rabbitmq
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rabbitmq
+  template:
+    metadata:
+      labels:
+        app: rabbitmq
+    spec:
+      containers:
+        - name: rabbitmq
+          image: rabbitmq:4.1-alpine
+          ports:
+            - name: amqp
+              containerPort: 5672
+          env:
+            - name: RABBITMQ_DEFAULT_USER
+              valueFrom: { configMapKeyRef: { name: rabbitmq-config, key: RABBITMQ_USER } }
+            - name: RABBITMQ_DEFAULT_PASS
+              valueFrom:
+                secretKeyRef: { name: rabbitmq-credentials, key: RABBITMQ_PASSWORD }
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/rabbitmq
+          readinessProbe:
+            exec:
+              command: ["rabbitmq-diagnostics", "-q", "check_port_connectivity"]
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["rabbitmq-diagnostics", "-q", "ping"]
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { cpu: 500m, memory: 512Mi }
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi

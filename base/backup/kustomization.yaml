@@ -1,0 +1,23 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - configmap.yaml
+  - pvc.yaml
+  - cronjob-app.yaml
+  - cronjob-keycloak.yaml
+configMapGenerator:
+  - name: backup-script
+    files:
+      - backup.sh
+# spec.schedule cannot read a ConfigMap at runtime, so the value is copied at build time.
+replacements:
+  - source:
+      kind: ConfigMap
+      name: backup-config
+      fieldPath: data.BACKUP_SCHEDULE
+    targets:
+      - select:
+          kind: CronJob
+          labelSelector: app=db-backup
+        fieldPaths:
+          - spec.schedule

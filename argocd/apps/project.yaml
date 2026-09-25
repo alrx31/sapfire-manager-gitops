@@ -1,0 +1,35 @@
+# Project for both Sapfire environments. It exists for the prod sync window (AD-21, TZ 13.3.2):
+# automated sync of sapfire-prod runs only inside the nightly window below. Dev has no window.
+#
+# Window parameters: `schedule` (cron, start of the window), `duration`, `timeZone`.
+# Default is 02:00-04:00 Europe/Minsk.
+#
+# `manualSync: true` keeps a manual sync possible outside the window, for an emergency rollback
+# (see ../README.md "Rollback"). Automated sync and selfHeal still wait for the window.
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: sapfire
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  description: Sapfire Manager, dev and prod
+  sourceRepos:
+    - https://github.com/alrx31/sapfire-manager-gitops.git
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: sapfire-dev
+    - server: https://kubernetes.default.svc
+      namespace: sapfire-prod
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+  syncWindows:
+    - kind: allow
+      schedule: "0 2 * * *"
+      duration: 2h
+      timeZone: Europe/Minsk
+      applications:
+        - sapfire-prod
+      manualSync: true

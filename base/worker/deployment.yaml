@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+  labels:
+    app: worker
+spec:
+  # Exactly one: the scheduler has no cross-instance lock (AD-02), and Recreate keeps a
+  # rollout from running the old and the new Pod side by side.
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: worker
+  template:
+    metadata:
+      labels:
+        app: worker
+    spec:
+      containers:
+        - name: worker
+          image: sapfire/worker:latest
+          ports:
+            - name: internal
+              containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: worker-config
+          env:
+            # Database settings are shared with the API through server-config.
+            - name: APP_DB_HOST
+              valueFrom:
+                configMapKeyRef: { name: server-config, key: APP_DB_HOST }
+            - name: APP_DB_PORT
+              valueFrom:
+                configMapKeyRef: { name: server-config, key: APP_DB_PORT }
+            - name: APP_DB_NAME
+              valueFrom:
+                configMapKeyRef: { name: server-config, key: APP_DB_NAME }
+            - name: APP_DB_USER
+              valueFrom:
+                configMapKeyRef: { name: server-config, key: APP_DB_USER }
+            - name: APP_DB_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: sapfire-db-credentials, key: APP_DB_PASSWORD }
+            - name: ConnectionStrings__Default
+              value: "Host=$(APP_DB_HOST);Port=$(APP_DB_PORT);Database=$(APP_DB_NAME);Username=$(APP_DB_USER);Password=$(APP_DB_PASSWORD)"
+            # Broker address and user are shared with the rabbitmq StatefulSet.
+            - name: RabbitMq__Host
+              valueFrom:
+                configMapKeyRef: { name: rabbitmq-config, key: RABBITMQ_HOST }
+            - name: RabbitMq__Port
+              valueFrom:
+                configMapKeyRef: { name: rabbitmq-config, key: RABBITMQ_PORT }
+            - name: RabbitMq__Username
+              valueFrom:
+                configMapKeyRef: { name: rabbitmq-config, key: RABBITMQ_USER }
+            # Optional so that the scheduler keeps running before the secret is sealed: without
+            # it the relay fails to connect and events wait in the outbox (7.2.7).
+            - name: RabbitMq__Password
+              valueFrom:
+                secretKeyRef: { name: rabbitmq-credentials, key: RABBITMQ_PASSWORD, optional: true }
+          readinessProbe:
+            httpGet: { path: /health/ready, port: internal }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /health/live, port: internal }
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { cpu: 500m, memory: 512Mi }
