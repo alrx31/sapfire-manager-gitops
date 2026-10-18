@@ -1,7 +1,7 @@
 # Sealed Secrets — sapfire-dev
 
 All six `SealedSecret` manifests are populated and wired into
-`kustomization.yaml`. They were sealed on 25.09.2026 against the local Docker Desktop cluster's
+`kustomization.yaml`. They were resealed on 18.10.2026 from the values already in the cluster, against the local Docker Desktop cluster's
 controller; a new cluster has a new controller key, so every file here has to be resealed
 with fresh values (`../../../seal-secret.sh sapfire-dev <name> KEY=...`).
 
