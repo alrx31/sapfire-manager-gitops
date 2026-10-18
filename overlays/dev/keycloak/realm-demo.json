@@ -6,7 +6,7 @@
       "subGroups": [
         {
           "name": "acme",
-          "attributes": { "org-slug": ["acme"] },
+          "attributes": { "org-slug": ["acme"], "displayName": ["Acme Corp"] },
           "subGroups": [
             {
               "name": "roles",
@@ -19,7 +19,7 @@
         },
         {
           "name": "beta",
-          "attributes": { "org-slug": ["beta"] },
+          "attributes": { "org-slug": ["beta"], "displayName": ["Beta Ltd"] },
           "subGroups": [
             {
               "name": "roles",
@@ -94,6 +94,7 @@
       "lastName": "Admin",
       "enabled": true,
       "emailVerified": true,
+      "requiredActions": [],
       "credentials": [ { "type": "password", "value": "Demo-Sapf1re!26", "temporary": false, "userLabel": "initial" } ],
       "groups": [ "/orgs/acme/roles/admin" ]
     },
@@ -104,6 +105,7 @@
       "lastName": "Employee",
       "enabled": true,
       "emailVerified": true,
+      "requiredActions": [],
       "credentials": [ { "type": "password", "value": "Demo-Sapf1re!26", "temporary": false, "userLabel": "initial" } ],
       "groups": [ "/orgs/acme/roles/employee" ]
     },
@@ -114,6 +116,7 @@
       "lastName": "Employee",
       "enabled": true,
       "emailVerified": true,
+      "requiredActions": [],
       "credentials": [ { "type": "password", "value": "Demo-Sapf1re!26", "temporary": false, "userLabel": "initial" } ],
       "groups": [ "/orgs/acme/roles/employee" ]
     },
@@ -124,6 +127,7 @@
       "lastName": "Operator",
       "enabled": true,
       "emailVerified": true,
+      "requiredActions": [],
       "credentials": [ { "type": "password", "value": "Demo-Sapf1re!26", "temporary": false, "userLabel": "initial" } ],
       "groups": [ "/orgs/acme/roles/employee" ]
     },
@@ -134,6 +138,7 @@
       "lastName": "Admin",
       "enabled": true,
       "emailVerified": true,
+      "requiredActions": [],
       "credentials": [ { "type": "password", "value": "Demo-Sapf1re!26", "temporary": false, "userLabel": "initial" } ],
       "groups": [ "/orgs/beta/roles/admin" ]
     }

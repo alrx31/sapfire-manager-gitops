@@ -18,3 +18,10 @@ data:
   KC_HEALTH_ENABLED: "true"
   KC_METRICS_ENABLED: "true"
   KC_BOOTSTRAP_ADMIN_USERNAME: admin
+  KEYCLOAK_SSO_SESSION_IDLE_TIMEOUT: "14400"
+  KEYCLOAK_SSO_SESSION_MAX_LIFESPAN: "86400"
+  SPA_PUBLIC_URL: https://app.sapfire.test/
+  # TOTP switch (src/keycloak/KEYCLOAK.md, "TOTP switch"). REQUIRED + "true" is the policy of the
+  # requirements; DISABLED + "false" turns off the code prompt and the OTP setup step.
+  KEYCLOAK_OTP_REQUIREMENT: REQUIRED
+  KEYCLOAK_OTP_SETUP_ENABLED: "true"

@@ -3,4 +3,4 @@ kind: ConfigMap
 metadata:
   name: server-config
 data:
-  Keycloak__Authority: https://auth.dev.sapfire.test/realms/sapfire
+  Keycloak__Authority: https://auth.dev.sapfire.127.0.0.1.nip.io/realms/sapfire

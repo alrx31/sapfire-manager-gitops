@@ -9,7 +9,46 @@ data:
   Worker__TimeZone: UTC
   # Five-field cron in Worker__TimeZone; empty means the job runs only on demand.
   Worker__Jobs__noop__Schedule: "0 * * * *"
+  Worker__Jobs__audit-retention__Schedule: "0 3 * * *"
+  Worker__Jobs__password-expiry__Schedule: "0 6 * * *"
+  PasswordExpiry__WarningDays: "7"
+  SpendLimits__WarningPercent: "80"
+  Worker__Jobs__temp-password-expiry__Schedule: "15 * * * *"
+  Worker__Jobs__billing-reminders__Schedule: "0 7 * * *"
+  # Exchange rates (AD-12): Frankfurter needs no key.
+  Worker__Jobs__exchange-rates__Schedule: "0 6 * * *"
+  ExchangeRates__BaseUrl: "https://api.frankfurter.dev/v1/"
+  # Subscription icons: the start page and icon of each access link's site, public addresses only.
+  Worker__Jobs__subscription-icons__Schedule: "*/10 * * * *"
+  SiteIcons__Timeout: "00:00:10"
+  SubscriptionIcons__BatchSize: "20"
+  AuditRetention__RetentionMonths: "6"
+  AuditRetention__BatchSize: "5000"
+  Worker__Jobs__notifications-cleanup__Schedule: "0 * * * *"
+  Worker__Jobs__export-expiry__Schedule: "*/15 * * * *"
+  NotificationRetention__RetentionDays: "7"
+  Worker__Jobs__personal-purge__Schedule: "30 3 * * *"
+  PersonalPurge__RetentionMonths: "3"
   Outbox__PollInterval: "00:00:05"
   Outbox__BatchSize: "100"
   RabbitMq__Consumer__MaxAttempts: "5"
   RabbitMq__Consumer__RetryDelay: "00:00:02"
+  # Exports (AD-05, 6.2.9) and the internal Gotenberg service (6.2.1).
+  Exports__MaxConcurrentPerOrganization: "10"
+  Exports__PollInterval: "00:00:05"
+  Exports__BatchSize: "500"
+  Exports__DefaultLanguage: ru
+  ExportStorage__Endpoint: http://minio:9000
+  ExportStorage__Bucket: exports
+  Gotenberg__Url: http://gotenberg:3000
+  Gotenberg__Timeout: "00:02:00"
+  # Notification email (7.2.5) through the installation's SMTP relay (13.1.1). The relay is not
+  # part of the base: set Email__Smtp__Host in the overlay; empty means email is off.
+  # The password, if the relay needs one, comes from the optional secret smtp-credentials.
+  Email__Language: ru
+  Email__Smtp__Host: ""
+  Email__Smtp__Port: "25"
+  Email__Smtp__Security: StartTlsWhenAvailable
+  Email__Smtp__Username: ""
+  Email__Smtp__From: "Sapfire Manager <no-reply@sapfire.local>"
+  Email__Smtp__Timeout: "00:00:30"

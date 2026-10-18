@@ -17,6 +17,10 @@ spec:
     metadata:
       labels:
         app: worker
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: /metrics
     spec:
       containers:
         - name: worker
@@ -46,6 +50,20 @@ spec:
                 secretKeyRef: { name: sapfire-db-credentials, key: APP_DB_PASSWORD }
             - name: ConnectionStrings__Default
               value: "Host=$(APP_DB_HOST);Port=$(APP_DB_PORT);Database=$(APP_DB_NAME);Username=$(APP_DB_USER);Password=$(APP_DB_PASSWORD)"
+            # Keycloak Admin API access (the password-expiry and temp-password-expiry jobs) is shared with the API:
+            # the same server-config keys and the same keycloak-client-secret.
+            - name: Keycloak__Authority
+              valueFrom:
+                configMapKeyRef: { name: server-config, key: Keycloak__Authority }
+            - name: Keycloak__InternalUrl
+              valueFrom:
+                configMapKeyRef: { name: server-config, key: Keycloak__InternalUrl }
+            - name: Keycloak__Admin__ClientId
+              valueFrom:
+                configMapKeyRef: { name: server-config, key: Keycloak__Admin__ClientId }
+            - name: Keycloak__Admin__ClientSecret
+              valueFrom:
+                secretKeyRef: { name: keycloak-client-secret, key: KEYCLOAK_ADMIN_CLIENT_SECRET }
             # Broker address and user are shared with the rabbitmq StatefulSet.
             - name: RabbitMq__Host
               valueFrom:
@@ -61,6 +79,17 @@ spec:
             - name: RabbitMq__Password
               valueFrom:
                 secretKeyRef: { name: rabbitmq-credentials, key: RABBITMQ_PASSWORD, optional: true }
+            # Optional: a relay inside the cluster usually accepts mail without authentication.
+            - name: Email__Smtp__Password
+              valueFrom:
+                secretKeyRef: { name: smtp-credentials, key: SMTP_PASSWORD, optional: true }
+            # Object storage for finished exports (AD-05); the keys come from minio-credentials.
+            - name: ExportStorage__AccessKey
+              valueFrom:
+                secretKeyRef: { name: minio-credentials, key: MINIO_ROOT_USER }
+            - name: ExportStorage__SecretKey
+              valueFrom:
+                secretKeyRef: { name: minio-credentials, key: MINIO_ROOT_PASSWORD }
           readinessProbe:
             httpGet: { path: /health/ready, port: internal }
             initialDelaySeconds: 5

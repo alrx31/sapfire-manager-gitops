@@ -1,0 +1,12 @@
+# ClusterIP only, never behind the ingress: Gotenberg is internal (6.2.1).
+apiVersion: v1
+kind: Service
+metadata:
+  name: gotenberg
+spec:
+  selector:
+    app: gotenberg
+  ports:
+    - name: http
+      port: 3000
+      targetPort: http

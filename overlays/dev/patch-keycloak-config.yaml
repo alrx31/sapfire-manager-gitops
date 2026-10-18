@@ -3,4 +3,8 @@ kind: ConfigMap
 metadata:
   name: keycloak-config
 data:
-  KC_HOSTNAME: https://auth.dev.sapfire.test
+  KC_HOSTNAME: https://auth.dev.sapfire.127.0.0.1.nip.io
+  SPA_PUBLIC_URL: https://app.dev.sapfire.127.0.0.1.nip.io/
+  # TOTP is off on the dev server. Set REQUIRED and "true" to turn it back on.
+  KEYCLOAK_OTP_REQUIREMENT: DISABLED
+  KEYCLOAK_OTP_SETUP_ENABLED: "false"

@@ -1,0 +1,13 @@
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  name: argocd-oidc-client
+  namespace: sapfire-dev
+spec:
+  encryptedData:
+    ARGOCD_OIDC_SECRET: AgArBfPuvPMJBC59pq/YkArv2uRctdlg2D+0deR7SafNy19JiFKeL61jIPR+PJcbiBDMpKUaYWKm4j5U4vg6uKy+XoozUJdwLoQp2fAi8E3Izfl+aREAYeJB82tE3KMd7vci8Y0jQzpkwl75I6XLA3SbQx3wez6uqV8KEIC5qqYwnMEgCO96eJ8Oyp5yjSRzj6+wV2jAmc7938c93mjQMO9xTeGam5CgqItZl9S+Enc1k7jWQ1LzjGXMJiN35T52MeXSxs+p+m5qTAxVrRSJagC2+Ghezuw5TYc4TyfyNJlGoiV65f/MSwkRzMaAxNTTZ8Kh/dpxrDJuNwJS+6ELpYLTnTs00I+ZuxZwZzzC0Gd1JWamzCnJVQ21Y2+bTDJntB7WrS/4sp8OF8tnjgsvsVmmeG0pRQP50ndMxqUsKEK+A89VyVtwyUCJKTeYb5yFmCcxALccNds/sx0zG3aYznzBMlccz9fAgBzmxk4BIncsjRPDpqKEhETRteEFdXJM+ZfrDjC05va8Bq8wAcha0EjqBfMFjqt+YEdmrxWu7GiLFlqtNO6itzFyqgQvXUntQoV2g06KEbSoj4yG9Yx/lUhe2q1nnhju+Sx9rjuxZYZpd5UwBj1MC9ZtBXp0wRIuqFM91gvtOpCBW46pzbz4zvUsz+NCVO2G3uyJaomTtmI6EURnzQ8JwE7OKJatNa+EFNnov2YPhMiecqdGuS5TJ72MUh6g/3dogW4yylThUThn8WpS96JBbM4Jnabaer3AM5I=
+  template:
+    metadata:
+      name: argocd-oidc-client
+      namespace: sapfire-dev

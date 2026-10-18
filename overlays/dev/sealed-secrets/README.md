@@ -1,6 +1,6 @@
 # Sealed Secrets — sapfire-dev
 
-All five `SealedSecret` manifests are populated and wired into
+All six `SealedSecret` manifests are populated and wired into
 `kustomization.yaml`. They were sealed on 25.09.2026 against the local Docker Desktop cluster's
 controller; a new cluster has a new controller key, so every file here has to be resealed
 with fresh values (`../../../seal-secret.sh sapfire-dev <name> KEY=...`).
@@ -12,6 +12,7 @@ Secrets (name → key):
 - `keycloak-admin-credentials` → `KEYCLOAK_ADMIN_PASSWORD`
 - `keycloak-client-secret` → `KEYCLOAK_ADMIN_CLIENT_SECRET`
 - `rabbitmq-credentials` → `RABBITMQ_PASSWORD`
+- `argocd-oidc-client` → `ARGOCD_OIDC_SECRET` (sealed 18.10.2026)
 
 Plaintext values are nowhere but in the cluster:
 `kubectl -n sapfire-dev get secret <name> -o jsonpath='{.data.<KEY>}' | base64 -d`.
@@ -24,6 +25,19 @@ secret cannot be a literal there. The export carries
 before parsing the JSON — so the sealed value reaches Keycloak and git keeps no
 plaintext. Rotating this secret therefore requires re-running the realm-sync
 Job, or Keycloak keeps serving the previous value.
+
+## Argo CD client secret
+
+The realm-sync Job reads `ARGOCD_OIDC_SECRET` from the optional secret `argocd-oidc-client`
+and puts it into the Keycloak client `argocd`. `argocd-oidc-client.yaml` was sealed on
+18.10.2026 together with the Argo CD side (`deploy/argocd/README.md`, "Sign-in"); the same
+value sits in `argocd-secret` under `oidc.keycloak.clientSecret`. To rotate, run both steps
+of "Sign-in" with a new value:
+
+```bash
+./seal-secret.sh sapfire-dev argocd-oidc-client ARGOCD_OIDC_SECRET='<value>' \
+  > overlays/dev/sealed-secrets/argocd-oidc-client.yaml
+```
 
 ## Re-sealing
 

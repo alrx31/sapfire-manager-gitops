@@ -1,0 +1,18 @@
+{
+  "realm": "master",
+  "passwordPolicy": "length(12) and upperCase(1) and lowerCase(1) and digits(1) and specialChars(1) and notContainsUsername and notEmail and passwordHistory(5) and forceExpiredPasswordChange(180) and passwordBlacklist(sapfire-blacklist.txt)",
+  "bruteForceProtected": true,
+  "permanentLockout": true,
+  "failureFactor": 10,
+  "requiredActions": [
+    {
+      "alias": "CONFIGURE_TOTP",
+      "name": "Configure OTP",
+      "providerId": "CONFIGURE_TOTP",
+      "enabled": true,
+      "defaultAction": true,
+      "priority": 10,
+      "config": {}
+    }
+  ]
+}

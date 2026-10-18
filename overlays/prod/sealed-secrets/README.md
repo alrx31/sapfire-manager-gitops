@@ -14,6 +14,9 @@ Required secrets (name → keys):
 - `keycloak-client-secret` → `KEYCLOAK_ADMIN_CLIENT_SECRET`
 - `rabbitmq-credentials` → `RABBITMQ_PASSWORD` (the broker's `sapfire` user; read by the
   rabbitmq StatefulSet and the Worker)
+- `minio-credentials` → `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD` (the export storage; read by
+  the minio StatefulSet, the server and the Worker). The base ships a placeholder Secret of the
+  same name; the SealedSecret replaces it.
 
 Until these exist, `kubectl apply -k deploy/k8s/overlays/prod` brings up every
 resource except working Secrets — the client/server/keycloak Deployments will

@@ -1,0 +1,24 @@
+# Export storage (AD-05): only the API and the Worker reach MinIO on 9000; it opens no
+# connections of its own.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: minio
+spec:
+  podSelector:
+    matchLabels:
+      app: minio
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: server
+        - podSelector:
+            matchLabels:
+              app: worker
+      ports:
+        - { protocol: TCP, port: 9000 }
+  egress: []

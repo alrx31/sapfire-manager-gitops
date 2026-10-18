@@ -28,3 +28,17 @@ data:
   # deep: ingress-nginx -> client nginx -> server. See ../../../DEPLOY.md "Rate limiting".
   ForwardedHeaders__KnownNetworks__0: 10.42.0.0/16
   ForwardedHeaders__ForwardLimit: "2"
+  Avatars__MaxBytes: "2097152"
+  # Finished exports are read from the MinIO bucket (AD-05); the keys come from minio-credentials.
+  ExportStorage__Endpoint: http://minio:9000
+  ExportStorage__Bucket: exports
+  # Export language when the requester has none saved in the account (6.3.2, 8.3.2).
+  Exports__DefaultLanguage: ru
+  # Organization archive (1.1.8): reuse of the org group's `archived` flag; "00:00:00" disables it.
+  Organizations__ArchiveFlagCacheTtl: "00:01:00"
+  # Recommendations (15.7.5, 15.7.6): installation switch and rule thresholds.
+  Advisor__Enabled: "true"
+  Advisor__WindowFraction: "0.25"
+  Advisor__WindowMinimumDays: "60"
+  Advisor__LeadDays: "5"
+  Advisor__CooldownDays: "90"

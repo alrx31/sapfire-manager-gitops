@@ -4,7 +4,7 @@ metadata:
   name: sapfire
 spec:
   rules:
-    - host: app.dev.sapfire.test
+    - host: app.dev.sapfire.127.0.0.1.nip.io
       http:
         paths:
           - path: /
@@ -14,7 +14,7 @@ spec:
                 name: client
                 port:
                   number: 80
-    - host: auth.dev.sapfire.test
+    - host: auth.dev.sapfire.127.0.0.1.nip.io
       http:
         paths:
           - path: /
@@ -25,7 +25,7 @@ spec:
                 port:
                   number: 8080
   tls:
-    - hosts: ["app.dev.sapfire.test"]
+    - hosts: ["app.dev.sapfire.127.0.0.1.nip.io"]
       secretName: sapfire-app-tls
-    - hosts: ["auth.dev.sapfire.test"]
+    - hosts: ["auth.dev.sapfire.127.0.0.1.nip.io"]
       secretName: sapfire-auth-tls

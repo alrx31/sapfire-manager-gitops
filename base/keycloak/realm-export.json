@@ -11,12 +11,214 @@
   "verifyEmail": false,
   "sslRequired": "external",
   "accessTokenLifespan": 600,
-  "ssoSessionIdleTimeout": 1800,
-  "ssoSessionMaxLifespan": 36000,
+  "ssoSessionIdleTimeout": $(env:KEYCLOAK_SSO_SESSION_IDLE_TIMEOUT),
+  "ssoSessionMaxLifespan": $(env:KEYCLOAK_SSO_SESSION_MAX_LIFESPAN),
   "offlineSessionIdleTimeout": 2592000,
   "revokeRefreshToken": true,
   "refreshTokenMaxReuse": 0,
-  "passwordPolicy": "length(12) and upperCase(1) and lowerCase(1) and digits(1) and specialChars(1) and notUsername and notEmail and passwordHistory(5) and passwordBlacklist(sapfire-blacklist.txt)",
+  "passwordPolicy": "length(12) and upperCase(1) and lowerCase(1) and digits(1) and specialChars(1) and notContainsUsername and notEmail and passwordHistory(5) and forceExpiredPasswordChange(180) and passwordBlacklist(sapfire-blacklist.txt)",
+  "eventsEnabled": true,
+  "enabledEventTypes": ["LOGIN", "LOGIN_ERROR"],
+  "adminEventsEnabled": true,
+  "adminEventsDetailsEnabled": false,
+  "bruteForceProtected": true,
+  "permanentLockout": true,
+  "failureFactor": 10,
+  "browserFlow": "sapfire browser",
+  "requiredActions": [
+    {
+      "alias": "CONFIGURE_TOTP",
+      "name": "Configure OTP",
+      "providerId": "CONFIGURE_TOTP",
+      "enabled": $(env:KEYCLOAK_OTP_SETUP_ENABLED:-true),
+      "defaultAction": true,
+      "priority": 10,
+      "config": {}
+    }
+  ],
+  "authenticatorConfig": [
+    {
+      "alias": "single browser session",
+      "config": {
+        "userRealmLimit": "1",
+        "userClientLimit": "0",
+        "behavior": "Terminate oldest session"
+      }
+    },
+    {
+      "alias": "single google session",
+      "config": {
+        "userRealmLimit": "1",
+        "userClientLimit": "0",
+        "behavior": "Terminate oldest session"
+      }
+    }
+  ],
+  "authenticationFlows": [
+    {
+      "alias": "sapfire browser",
+      "description": "Browser login with mandatory TOTP and one active user session",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "auth-cookie",
+          "requirement": "ALTERNATIVE",
+          "priority": 10,
+          "userSetupAllowed": false
+        },
+        {
+          "flowAlias": "sapfire browser with session limit",
+          "authenticatorFlow": true,
+          "requirement": "ALTERNATIVE",
+          "priority": 20,
+          "userSetupAllowed": false
+        }
+      ]
+    },
+    {
+      "alias": "sapfire browser with session limit",
+      "description": "Full browser authentication followed by the user session limit",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "flowAlias": "sapfire browser forms",
+          "authenticatorFlow": true,
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "user-session-limits",
+          "authenticatorConfig": "single browser session",
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "userSetupAllowed": false
+        }
+      ]
+    },
+    {
+      "alias": "sapfire browser forms",
+      "description": "Username, password and TOTP",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "auth-username-password-form",
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "auth-otp-form",
+          "requirement": "$(env:KEYCLOAK_OTP_REQUIREMENT:-REQUIRED)",
+          "priority": 20,
+          "userSetupAllowed": false
+        }
+      ]
+    },
+    {
+      "alias": "sapfire google first login",
+      "description": "First Google sign-in: links only an existing account with the same email, after its password",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "idp-detect-existing-broker-user",
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "idp-username-password-form",
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "userSetupAllowed": false
+        }
+      ]
+    },
+    {
+      "alias": "sapfire google post login",
+      "description": "Every Google sign-in: TOTP and one active user session",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "auth-otp-form",
+          "requirement": "$(env:KEYCLOAK_OTP_REQUIREMENT:-REQUIRED)",
+          "priority": 10,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "user-session-limits",
+          "authenticatorConfig": "single google session",
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "userSetupAllowed": false
+        }
+      ]
+    }
+  ],
+  "identityProviders": [
+    {
+      "alias": "google",
+      "displayName": "Google",
+      "providerId": "google",
+      "enabled": $(env:GOOGLE_IDP_ENABLED:-false),
+      "trustEmail": false,
+      "storeToken": false,
+      "linkOnly": false,
+      "hideOnLogin": false,
+      "firstBrokerLoginFlowAlias": "sapfire google first login",
+      "postBrokerLoginFlowAlias": "sapfire google post login",
+      "config": {
+        "clientId": "$(env:GOOGLE_CLIENT_ID:-google-client-id-not-set)",
+        "clientSecret": "$(env:GOOGLE_CLIENT_SECRET:-google-client-secret-not-set)",
+        "defaultScope": "openid email profile",
+        "syncMode": "FORCE",
+        "guiOrder": "10"
+      }
+    }
+  ],
+  "identityProviderMappers": [
+    {
+      "name": "google first name",
+      "identityProviderAlias": "google",
+      "identityProviderMapper": "google-user-attribute-mapper",
+      "config": { "syncMode": "INHERIT", "jsonField": "given_name", "userAttribute": "firstName" }
+    },
+    {
+      "name": "google last name",
+      "identityProviderAlias": "google",
+      "identityProviderMapper": "google-user-attribute-mapper",
+      "config": { "syncMode": "INHERIT", "jsonField": "family_name", "userAttribute": "lastName" }
+    },
+    {
+      "name": "google picture",
+      "identityProviderAlias": "google",
+      "identityProviderMapper": "google-user-attribute-mapper",
+      "config": { "syncMode": "INHERIT", "jsonField": "picture", "userAttribute": "picture" }
+    }
+  ],
+  "components": {
+    "org.keycloak.userprofile.UserProfileProvider": [
+      {
+        "providerId": "declarative-user-profile",
+        "subComponents": {},
+        "config": {
+          "kc.user.profile.config": [
+            "{\"attributes\":[{\"name\":\"username\",\"displayName\":\"${username}\",\"validations\":{\"length\":{\"min\":3,\"max\":255},\"username-prohibited-characters\":{},\"up-username-not-idn-homograph\":{}},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"email\",\"displayName\":\"${email}\",\"validations\":{\"email\":{},\"length\":{\"max\":255}},\"required\":{\"roles\":[\"user\"]},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"firstName\",\"displayName\":\"${firstName}\",\"validations\":{\"length\":{\"max\":255},\"person-name-prohibited-characters\":{}},\"required\":{\"roles\":[\"user\"]},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"lastName\",\"displayName\":\"${lastName}\",\"validations\":{\"length\":{\"max\":255},\"person-name-prohibited-characters\":{}},\"required\":{\"roles\":[\"user\"]},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"picture\",\"displayName\":\"Picture\",\"validations\":{\"length\":{\"max\":2048}},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\"]},\"multivalued\":false}],\"groups\":[{\"name\":\"user-metadata\",\"displayHeader\":\"User metadata\",\"displayDescription\":\"Attributes, which refer to user metadata\"}]}"
+          ]
+        }
+      }
+    ]
+  },
   "roles": {
     "realm": [
       { "name": "sapfire-admin",    "description": "Org admin in any Sapfire org" },
@@ -28,6 +230,7 @@
       "clientId": "sapfire-spa",
       "name": "Sapfire SPA",
       "description": "Public OIDC client for the React SPA. Auth Code + PKCE, no secret.",
+      "baseUrl": "$(env:SPA_PUBLIC_URL)",
       "enabled": true,
       "protocol": "openid-connect",
       "publicClient": true,
@@ -41,6 +244,7 @@
         "http://localhost:3000/*",
         "https://localhost/*",
         "https://app.dev.sapfire.test/*",
+        "https://app.dev.sapfire.127.0.0.1.nip.io/*",
         "https://app.sapfire.test/*"
       ],
       "webOrigins": [
@@ -48,13 +252,28 @@
         "http://localhost:3000",
         "https://localhost",
         "https://app.dev.sapfire.test",
+        "https://app.dev.sapfire.127.0.0.1.nip.io",
         "https://app.sapfire.test"
       ],
       "attributes": {
         "pkce.code.challenge.method": "S256",
-        "post.logout.redirect.uris": "http://localhost:5173/*##http://localhost:3000/*##https://localhost/*##https://app.dev.sapfire.test/*##https://app.sapfire.test/*"
+        "post.logout.redirect.uris": "http://localhost:5173/*##http://localhost:3000/*##https://localhost/*##https://app.dev.sapfire.test/*##https://app.dev.sapfire.127.0.0.1.nip.io/*##https://app.sapfire.test/*"
       },
       "protocolMappers": [
+        {
+          "name": "picture",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "picture",
+            "claim.name": "picture",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        },
         {
           "name": "groups",
           "protocol": "openid-connect",
@@ -108,7 +327,20 @@
       "implicitFlowEnabled": false,
       "attributes": {
         "use.refresh.tokens": "false"
-      }
+      },
+      "protocolMappers": [
+        {
+          "name": "audience-sapfire-api",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "sapfire-api",
+            "id.token.claim": "false",
+            "access.token.claim": "true"
+          }
+        }
+      ]
     }
   ],
   "users": [
@@ -120,9 +352,12 @@
         "realm-management": [
           "view-realm",
           "view-users",
+          "view-events",
           "query-users",
           "query-groups",
-          "manage-users"
+          "manage-users",
+          "view-clients",
+          "query-clients"
         ]
       }
     }

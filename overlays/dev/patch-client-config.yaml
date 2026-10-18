@@ -3,4 +3,4 @@ kind: ConfigMap
 metadata:
   name: client-config
 data:
-  KEYCLOAK_URL: https://auth.dev.sapfire.test
+  KEYCLOAK_URL: https://auth.dev.sapfire.127.0.0.1.nip.io

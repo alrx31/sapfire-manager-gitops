@@ -6,3 +6,4 @@ resources:
   - keycloak-admin-credentials.yaml
   - keycloak-client-secret.yaml
   - rabbitmq-credentials.yaml
+  - argocd-oidc-client.yaml

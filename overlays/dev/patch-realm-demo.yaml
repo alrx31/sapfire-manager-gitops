@@ -1,6 +1,6 @@
 # Dev applies the demo orgs, users and the sapfire-seed client on top of the base realm.
 # Order matters: the demo groups use realm roles and the demo users use groups, so the base
-# file goes first. keycloak-config-cli keeps the order of the listed locations.
+# file precedes the demo file. keycloak-config-cli keeps the order of the listed locations.
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -12,4 +12,4 @@ spec:
         - name: keycloak-config-cli
           env:
             - name: IMPORT_FILES_LOCATIONS
-              value: /config/realm-export.json,/config/realm-demo.json
+              value: /config/master-realm.json,/config/realm-export.json,/config/argocd-client.json,/config/realm-demo.json

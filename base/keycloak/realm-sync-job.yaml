@@ -19,6 +19,9 @@ metadata:
 spec:
   backoffLimit: 3
   template:
+    metadata:
+      labels:
+        app: keycloak-realm-sync
     spec:
       restartPolicy: Never
       containers:
@@ -37,15 +40,18 @@ spec:
               valueFrom:
                 secretKeyRef: { name: keycloak-admin-credentials, key: KEYCLOAK_ADMIN_PASSWORD }
             - name: IMPORT_FILES_LOCATIONS
-              value: /config/realm-export.json
-            # Groups and clients absent from the files stay: org groups made by create-org.sh,
-            # SSO clients registered in the console, and in dev the base and demo files that
-            # each describe only part of the realm. Users have no managed switch in
-            # keycloak-config-cli and are never deleted; a password tagged userLabel "initial"
-            # is set only when the user is created.
+              value: /config/master-realm.json,/config/realm-export.json,/config/argocd-client.json
+            # Groups, clients and authentication flows absent from the files stay: org groups
+            # made by create-org.sh, SSO clients registered in the console together with the
+            # browser flow they bind (see KEYCLOAK.md, "SSO clients of other services"), and
+            # in dev the base and demo files that each describe only part of the realm. Users
+            # have no managed switch in keycloak-config-cli and are never deleted; a password
+            # tagged userLabel "initial" is set only when the user is created.
             - name: IMPORT_MANAGED_GROUP
               value: no-delete
             - name: IMPORT_MANAGED_CLIENT
+              value: no-delete
+            - name: IMPORT_MANAGED_AUTHENTICATIONFLOW
               value: no-delete
             # realm-export.json is committed to git, so the sapfire-api client secret cannot be
             # a literal there. keycloak-config-cli substitutes $(env:...) before the JSON is
@@ -55,6 +61,33 @@ spec:
             - name: KEYCLOAK_ADMIN_CLIENT_SECRET
               valueFrom:
                 secretKeyRef: { name: keycloak-client-secret, key: KEYCLOAK_ADMIN_CLIENT_SECRET }
+            # Secret of the Argo CD client. Absent secret: the client gets a placeholder that no
+            # Argo CD knows, so sign-in to Argo CD fails until argocd-oidc-client is sealed
+            # (deploy/argocd/README.md, "Sign-in").
+            - name: ARGOCD_OIDC_SECRET
+              valueFrom:
+                secretKeyRef: { name: argocd-oidc-client, key: ARGOCD_OIDC_SECRET, optional: true }
+            - name: KEYCLOAK_SSO_SESSION_IDLE_TIMEOUT
+              valueFrom: { configMapKeyRef: { name: keycloak-config, key: KEYCLOAK_SSO_SESSION_IDLE_TIMEOUT } }
+            - name: KEYCLOAK_SSO_SESSION_MAX_LIFESPAN
+              valueFrom: { configMapKeyRef: { name: keycloak-config, key: KEYCLOAK_SSO_SESSION_MAX_LIFESPAN } }
+            - name: SPA_PUBLIC_URL
+              valueFrom: { configMapKeyRef: { name: keycloak-config, key: SPA_PUBLIC_URL } }
+            - name: KEYCLOAK_OTP_REQUIREMENT
+              valueFrom: { configMapKeyRef: { name: keycloak-config, key: KEYCLOAK_OTP_REQUIREMENT, optional: true } }
+            - name: KEYCLOAK_OTP_SETUP_ENABLED
+              valueFrom: { configMapKeyRef: { name: keycloak-config, key: KEYCLOAK_OTP_SETUP_ENABLED, optional: true } }
+            # Google sign-in (KEYCLOAK.md, "Sign-in with Google"). The secret is optional: without
+            # it the provider stays disabled and the login page shows no Google button.
+            - name: GOOGLE_IDP_ENABLED
+              valueFrom:
+                secretKeyRef: { name: google-idp, key: GOOGLE_IDP_ENABLED, optional: true }
+            - name: GOOGLE_CLIENT_ID
+              valueFrom:
+                secretKeyRef: { name: google-idp, key: GOOGLE_CLIENT_ID, optional: true }
+            - name: GOOGLE_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef: { name: google-idp, key: GOOGLE_CLIENT_SECRET, optional: true }
           volumeMounts:
             - name: realm-config
               mountPath: /config

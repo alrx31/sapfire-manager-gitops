@@ -1,0 +1,169 @@
+{
+  "realm": "sapfire",
+  "authenticationFlows": [
+    {
+      "alias": "argocd-browser",
+      "description": "Browser login for the Argo CD client: sign-in, then only holders of the realm role sapfire-admin pass",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "flowAlias": "argocd browser identify",
+          "authenticatorFlow": true,
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false
+        },
+        {
+          "flowAlias": "argocd admin guard",
+          "authenticatorFlow": true,
+          "requirement": "CONDITIONAL",
+          "priority": 20,
+          "userSetupAllowed": false
+        }
+      ]
+    },
+    {
+      "alias": "argocd browser identify",
+      "description": "Existing Keycloak session or username, password and TOTP",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "auth-cookie",
+          "requirement": "ALTERNATIVE",
+          "priority": 10,
+          "userSetupAllowed": false
+        },
+        {
+          "flowAlias": "argocd browser forms",
+          "authenticatorFlow": true,
+          "requirement": "ALTERNATIVE",
+          "priority": 20,
+          "userSetupAllowed": false
+        }
+      ]
+    },
+    {
+      "alias": "argocd browser forms",
+      "description": "Username, password and TOTP",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "auth-username-password-form",
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "auth-otp-form",
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "userSetupAllowed": false
+        }
+      ]
+    },
+    {
+      "alias": "argocd admin guard",
+      "description": "Denies the sign-in when the user lacks the realm role sapfire-admin",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "conditional-user-role",
+          "authenticatorConfig": "argocd-no-admin",
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "deny-access-authenticator",
+          "authenticatorConfig": "argocd-deny",
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "userSetupAllowed": false
+        }
+      ]
+    }
+  ],
+  "authenticatorConfig": [
+    {
+      "alias": "argocd-no-admin",
+      "config": {
+        "condUserRole": "sapfire-admin",
+        "negate": "true"
+      }
+    },
+    {
+      "alias": "argocd-deny",
+      "config": {
+        "denyErrorMessage": "Доступ к Argo CD есть только у администраторов"
+      }
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "argocd",
+      "name": "Argo CD",
+      "description": "Confidential OIDC client of Argo CD. Auth Code with the client secret, no PKCE (Argo CD v2.13 does not send it). The flow override argocd-browser lets in only holders of the realm role sapfire-admin.",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "$(env:ARGOCD_OIDC_SECRET:-argocd-oidc-secret-not-set)",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "implicitFlowEnabled": false,
+      "serviceAccountsEnabled": false,
+      "frontchannelLogout": true,
+      "authenticationFlowBindingOverrides": {
+        "browser": "argocd-browser"
+      },
+      "redirectUris": [
+        "https://argo.dev.sapfire.test/auth/callback",
+        "https://argo.dev.sapfire.127.0.0.1.nip.io/auth/callback"
+      ],
+      "webOrigins": [
+        "https://argo.dev.sapfire.test",
+        "https://argo.dev.sapfire.127.0.0.1.nip.io"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "",
+        "post.logout.redirect.uris": "https://argo.dev.sapfire.test/*##https://argo.dev.sapfire.127.0.0.1.nip.io/*"
+      },
+      "protocolMappers": [
+        {
+          "name": "groups",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-group-membership-mapper",
+          "consentRequired": false,
+          "config": {
+            "full.path": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "false",
+            "userinfo.token.claim": "false",
+            "claim.name": "groups"
+          }
+        },
+        {
+          "name": "realm-roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "multivalued": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "false",
+            "userinfo.token.claim": "false",
+            "claim.name": "roles"
+          }
+        }
+      ]
+    }
+  ]
+}

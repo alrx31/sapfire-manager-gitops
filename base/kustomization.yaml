@@ -8,6 +8,10 @@ resources:
   - postgres-app
   - postgres-kc
   - rabbitmq
+  - minio
+  - gotenberg
   - backup
+  - monitoring
+  - network-policy
   - ingress.yaml
   - ingress-auth-limit.yaml
