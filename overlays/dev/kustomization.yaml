@@ -5,9 +5,11 @@ resources:
   - ../../base
   - namespace.yaml
   - sealed-secrets
+  - mailpit
 patches:
   - path: patch-client-config.yaml
   - path: patch-server-config.yaml
+  - path: patch-worker-config.yaml
   - path: patch-keycloak-config.yaml
   - path: patch-ingress.yaml
   - path: patch-ingress-auth-limit.yaml

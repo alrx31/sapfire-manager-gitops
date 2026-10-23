@@ -1,0 +1,42 @@
+# Mailpit takes SMTP from the worker (notification email) and Keycloak (realm email) and
+# leaves the cluster nowhere. The UI port is open to no pod: port-forward bypasses policies.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: mailpit
+spec:
+  podSelector:
+    matchLabels:
+      app: mailpit
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: worker
+        - podSelector:
+            matchLabels:
+              app: keycloak
+      ports:
+        - { protocol: TCP, port: 1025 }
+  egress: []
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: smtp-to-mailpit
+spec:
+  podSelector:
+    matchExpressions:
+      - { key: app, operator: In, values: [worker, keycloak] }
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: mailpit
+      ports:
+        - { protocol: TCP, port: 1025 }

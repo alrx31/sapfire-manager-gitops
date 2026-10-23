@@ -1,5 +1,14 @@
 {
   "realm": "sapfire",
+  "smtpServer": {
+    "host": "mailpit",
+    "port": "1025",
+    "from": "no-reply@sapfire.local",
+    "fromDisplayName": "Sapfire Manager",
+    "auth": "false",
+    "ssl": "false",
+    "starttls": "false"
+  },
   "groups": [
     {
       "name": "orgs",
